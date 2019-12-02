@@ -10,6 +10,7 @@ import (
 
 type Farm struct {
 	UID         uuid.UUID `json:"uid"`
+	UserID      uuid.UUID `json:"user_id"`
 	Name        string    `json:"name"`
 	IsActive    bool      `json:"is_active"`
 	CreatedDate time.Time `json:"created_date"`
@@ -32,17 +33,18 @@ func (state *Farm) Transition(event interface{}) {
 	switch e := event.(type) {
 	case FarmCreated:
 		state.UID = e.UID
+		state.UserID = e.UserID
 		state.Name = e.Name
 		state.IsActive = e.IsActive
 		state.CreatedDate = e.CreatedDate
 
 	case FarmNameChanged:
-    state.Name = e.Name
-  }
+		state.Name = e.Name
+	}
 }
 
 // CreateFarm registers a new farm to Tania
-func CreateFarm(name string) (*Farm, error) {
+func CreateFarm(name string, userID string) (*Farm, error) {
 	err := validateFarmName(name)
 	if err != nil {
 		return nil, err
@@ -53,10 +55,16 @@ func CreateFarm(name string) (*Farm, error) {
 		return nil, err
 	}
 
+	parsedUserID, err := uuid.FromString(userID)
+	if err != nil {
+		return nil, err
+	}
+
 	initial := &Farm{}
 
 	initial.TrackChange(FarmCreated{
 		UID:         uid,
+		UserID:      parsedUserID,
 		Name:        name,
 		IsActive:    true,
 		CreatedDate: time.Now(),
